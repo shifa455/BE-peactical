@@ -1,0 +1,54 @@
+HPC 3
+
+
+#include <iostream>
+#include <vector>
+#include <cstdlib>
+#include <ctime>
+#include <climits> // For INT_MAX and INT_MIN
+#include <chrono>  // For timing
+
+using namespace std;
+
+vector<int> getRandomArray(int size) {
+    vector<int> arr(size);
+    for (int& x : arr) x = rand() % 10000;  // Random numbers between 0 and 9999
+    return arr;
+}
+
+int main() {
+    srand(time(0));
+    const int SIZE = 100000;  // Adjust size as needed for testing
+    vector<int> arr = getRandomArray(SIZE);
+
+    int min_val = INT_MAX, max_val = INT_MIN, sum_val = 0;
+
+    // Start timing the parallel operations
+    auto start_time = chrono::high_resolution_clock::now();
+
+    #pragma omp parallel for reduction(min:min_val) reduction(max:max_val) reduction(+:sum_val)
+    for (int i = 0; i < SIZE; i++) {
+        // Parallel reductions will update these variables atomically
+        min_val = std::min(min_val, arr[i]);
+        max_val = std::max(max_val, arr[i]);
+        sum_val += arr[i];
+    }
+
+    // End timing the parallel operations
+    auto end_time = chrono::high_resolution_clock::now();
+
+    // Calculate Average
+    double avg_val = (double)sum_val / SIZE;
+
+    // Calculate duration in seconds
+    chrono::duration<double> duration = end_time - start_time;
+
+    // Display the results
+    cout << "Min: " << min_val << endl;
+    cout << "Max: " << max_val << endl;
+    cout << "Sum: " << sum_val << endl;
+    cout << "Average: " << avg_val << endl;
+    cout << "Parallel Reduction Execution Time: " << duration.count() << " seconds\n";
+
+    return 0;
+}
